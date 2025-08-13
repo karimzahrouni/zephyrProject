@@ -7,8 +7,21 @@
 
 LOG_MODULE_REGISTER(LOG_LEVEL_INF);
 
+/* The devicetree node identifier for the "ledUser2" alias. */
+#define LED0_NODE DT_ALIAS(led0)
+
+/* LED status */
+#define LED_ON            GPIO_PIN_RESET
+#define LED_OFF           GPIO_PIN_SET
+
 /* Server config */
-#define SERVER_PORT 			5000
+#define SERVER_PORT       5000
+
+/*
+ * A build error on this line means your board is unsupported.
+ * See the sample documentation for information on how to fix this.
+ */
+static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(LED0_NODE, gpios);
 
 /* Server file descriptor */
 static int server_fd = -1;
@@ -20,12 +33,30 @@ static void on_ip(const char *ip)
   LOG_INF("MY Device IP: %s", ip);
 }
 
+/* LEDs initialization */
+static int led_init(void)
+{
+  int ret;
+
+  if (!gpio_is_ready_dt(&led))
+  {
+    ret = -1;
+  }
+
+  ret = gpio_pin_configure_dt(&led, GPIO_OUTPUT_ACTIVE);
+
+  return ret;
+}
+
 void main(void)
 {
   struct sockaddr_in server_addr, client_addr;
   socklen_t client_addr_len = sizeof(client_addr);
   char recv_buf[128];
   int client_fd;
+
+  /* Leds initialization */
+	led_init();
 
   /* Initialize network module */
   network_init();
@@ -81,17 +112,23 @@ void main(void)
       /* Turn LED on/off commands */
       if (strncmp(recv_buf, "LED_ON", 6) == 0)
       {
-				LOG_INF("Turn LED ON");
+        if (gpio_pin_set_dt(&led, LED_ON) == 0U)
+        {
+          LOG_INF("Turn LED ON");
 
-				// Echo back
-				send(client_fd, (char*)"LED TURNED ON", 15, 0);
+          // Echo back
+          send(client_fd, (char*)"LED TURNED ON", 15, 0);
+        }
       }
       else if (strncmp(recv_buf, "LED_OFF", 7) == 0)
       {
-        LOG_INF("Turn LED OFF");
+        if (gpio_pin_set_dt(&led, LED_OFF) == 0U)
+        {
+          LOG_INF("Turn LED OFF");
 
-				// Echo back
-        send(client_fd, (char*)"LED TURNED OFF", 15, 0);
+          // Echo back
+          send(client_fd, (char*)"LED TURNED OFF", 15, 0);
+        }
       }
     }
 
