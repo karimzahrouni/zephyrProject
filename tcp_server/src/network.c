@@ -26,10 +26,10 @@ LOG_MODULE_REGISTER(Network, LOG_LEVEL_INF);
  */
 struct network_ctx
 {
-	struct net_if *p_iface;                    /**< Pointer to the active network interface */
-	struct net_mgmt_event_callback mgmt_cb;    /**< Network management event callback handle */
-	network_ip_callback_t p_cb;                /**< User callback when an IP is assigned */
-	bool is_initialized;                       /**< Flag to check if initialized */
+  struct net_if *p_iface;                    /**< Pointer to the active network interface */
+  struct net_mgmt_event_callback mgmt_cb;    /**< Network management event callback handle */
+  network_ip_callback_t p_cb;                /**< User callback when an IP is assigned */
+  bool is_initialized;                       /**< Flag to check if initialized */
 };
 
 static struct network_ctx g_net = {0};
@@ -45,41 +45,41 @@ static struct network_ctx g_net = {0};
 static void mgmt_handler(struct net_mgmt_event_callback *p_cb,
                          uint32_t event, struct net_if *p_iface)
 {
-	ARG_UNUSED(p_cb);
+  ARG_UNUSED(p_cb);
 
-	if (event != NET_EVENT_IPV4_ADDR_ADD)
+  if (event != NET_EVENT_IPV4_ADDR_ADD)
+  {
+    return;
+  }
+
+  /* Ensure IPv4 configuration exists */
+  if (!p_iface || !p_iface->config.ip.ipv4)
+  {
+    return;
+  }
+
+  const struct net_if_addr_ipv4 *p_ua = &p_iface->config.ip.ipv4->unicast[0];
+
+  /* Only process DHCP-assigned addresses */
+  if (p_ua->ipv4.addr_type != NET_ADDR_DHCP)
 	{
-		return;
-	}
+    return;
+  }
 
-	/* Ensure IPv4 configuration exists */
-	if (!p_iface || !p_iface->config.ip.ipv4)
-	{
-		return;
-	}
+  char ip_buf[NET_IPV4_ADDR_LEN] = {0};
 
-	const struct net_if_addr_ipv4 *p_ua = &p_iface->config.ip.ipv4->unicast[0];
+  if (!net_addr_ntop(AF_INET, &p_ua->ipv4.address.in_addr, ip_buf, sizeof(ip_buf)))
+  {
+    LOG_ERR("Failed to convert IPv4 to string");
+    return;
+  }
 
-	/* Only process DHCP-assigned addresses */
-	if (p_ua->ipv4.addr_type != NET_ADDR_DHCP)
-	{
-		return;
-	}
+  LOG_INF("Got IP: %s", ip_buf);
 
-	char ip_buf[NET_IPV4_ADDR_LEN] = {0};
-
-	if (!net_addr_ntop(AF_INET, &p_ua->ipv4.address.in_addr, ip_buf, sizeof(ip_buf)))
-	{
-		LOG_ERR("Failed to convert IPv4 to string");
-		return;
-	}
-
-	LOG_INF("Got IP: %s", ip_buf);
-
-	if (g_net.p_cb)
-	{
-		g_net.p_cb(ip_buf);
-	}
+  if (g_net.p_cb)
+  {
+    g_net.p_cb(ip_buf);
+  }
 }
 
 /**
@@ -90,27 +90,27 @@ static void mgmt_handler(struct net_mgmt_event_callback *p_cb,
  */
 int network_init(void)
 {
-	if (g_net.is_initialized)
-	{
-		return 0;
-	}
+  if (g_net.is_initialized)
+  {
+    return 0;
+  }
 
-	g_net.p_iface = net_if_get_default();
-	if (!g_net.p_iface)
-	{
-		LOG_ERR("No default network interface");
-		return -ENODEV;
-	}
+  g_net.p_iface = net_if_get_default();
+  if (!g_net.p_iface)
+  {
+    LOG_ERR("No default network interface");
+    return -ENODEV;
+  }
 
-	net_mgmt_init_event_callback(&g_net.mgmt_cb,
-	                             mgmt_handler,
-	                             NET_EVENT_IPV4_ADDR_ADD);
+  net_mgmt_init_event_callback(&g_net.mgmt_cb,
+                              mgmt_handler,
+	                            NET_EVENT_IPV4_ADDR_ADD);
 
-	net_mgmt_add_event_callback(&g_net.mgmt_cb);
+  net_mgmt_add_event_callback(&g_net.mgmt_cb);
 
-	g_net.is_initialized = true;
+  g_net.is_initialized = true;
 
-	return 0;
+  return 0;
 }
 
 /**
@@ -120,18 +120,18 @@ int network_init(void)
  */
 int network_start(void)
 {
-	if (!g_net.is_initialized)
-	{
-		int rc = network_init();
-		if (rc)
-		{
-			return rc;
-		}
-	}
+  if (!g_net.is_initialized)
+  {
+    int rc = network_init();
+    if (rc)
+    {
+      return rc;
+    }
+  }
 
-	net_dhcpv4_start(g_net.p_iface);
+  net_dhcpv4_start(g_net.p_iface);
 
-	return 0;
+  return 0;
 }
 
 /**
@@ -141,12 +141,12 @@ int network_start(void)
  */
 int network_register_ip_acquired_callback(network_ip_callback_t p_cb)
 {
-	if (p_cb == NULL)
-	{
-		LOG_ERR("NULL callback");
-		return -EINVAL;
-	}
+  if (p_cb == NULL)
+  {
+    LOG_ERR("NULL callback");
+    return -EINVAL;
+  }
 
-	g_net.p_cb = p_cb;
-	return 0;
+  g_net.p_cb = p_cb;
+  return 0;
 }
