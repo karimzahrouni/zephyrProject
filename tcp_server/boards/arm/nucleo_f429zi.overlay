@@ -6,8 +6,8 @@
   leds {
       compatible = "gpio-leds";
       my_led0: led_0 {
-          gpios = <&gpiob 14 GPIO_ACTIVE_LOW>;
-          label = "User LED 0";
+          gpios = <&gpiob 7 GPIO_ACTIVE_LOW>;
+          label = "User LED";
       };
   };
 };

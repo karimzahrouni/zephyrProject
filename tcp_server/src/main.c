@@ -22,6 +22,8 @@ LOG_MODULE_REGISTER(LOG_LEVEL_INF);
  * See the sample documentation for information on how to fix this.
  */
 static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(LED0_NODE, gpios);
+static const char* led_on_buf = "LED TURNED ON\n";
+static const char* led_off_buf = "LED TURNED OFF\n";
 
 /* Server file descriptor */
 static int server_fd = -1;
@@ -117,7 +119,7 @@ void main(void)
           LOG_INF("Turn LED ON");
 
           // Echo back
-          send(client_fd, (char*)"LED TURNED ON", 15, 0);
+          send(client_fd, led_on_buf, strlen(led_on_buf), 0);
         }
       }
       else if (strncmp(recv_buf, "LED_OFF", 7) == 0)
@@ -127,7 +129,7 @@ void main(void)
           LOG_INF("Turn LED OFF");
 
           // Echo back
-          send(client_fd, (char*)"LED TURNED OFF", 15, 0);
+          send(client_fd, led_off_buf, strlen(led_off_buf), 0);
         }
       }
     }
