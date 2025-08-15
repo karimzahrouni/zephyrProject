@@ -17,6 +17,8 @@ LOG_MODULE_REGISTER(LOG_LEVEL_INF);
 /* Server config */
 #define SERVER_PORT       5000
 
+static K_SEM_DEFINE(ip_ready_sem, 0, 1);
+
 /*
  * A build error on this line means your board is unsupported.
  * See the sample documentation for information on how to fix this.
@@ -33,6 +35,8 @@ static void on_ip(const char *ip)
 {
   /* Use %s directly if log_strdup not available */
   LOG_INF("MY Device IP: %s", ip);
+
+  k_sem_give(&ip_ready_sem);
 }
 
 /* LEDs initialization */
@@ -68,6 +72,11 @@ void main(void)
 
   /* Start DHCP */
   network_start();
+
+  /* Wait for IP */
+  LOG_INF("Waiting for IP...");
+  k_sem_take(&ip_ready_sem, K_FOREVER);
+  LOG_INF("IP ready, registering service");
 
   server_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
   if (server_fd < 0)
